@@ -27,7 +27,7 @@ namespace SampleService
 
         async void CheckTheTime(object state)
         {
-            var (yes, no) = await _client.GetResponse<YesItIs, NoNotYet>(new { });
+            var (yes, no) = await _client.GetResponse<YesItIs, NoNotYet>(new IsItTime());
 
             if (yes.IsCompletedSuccessfully)
                 await Console.Out.WriteLineAsync("It's party time!");

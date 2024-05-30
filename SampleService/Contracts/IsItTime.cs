@@ -1,6 +1,7 @@
 namespace SampleService.Contracts
 {
-    public interface IsItTime
+    public record IsItTime() : ITenantMessage
     {
+        public long TenantId { get; set; }
     }
 }

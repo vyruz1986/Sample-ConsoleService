@@ -13,6 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SampleService.Contracts;
+using SampleService.Filters;
 
 namespace SampleService
 {
@@ -39,8 +40,13 @@ namespace SampleService
 
                     services.AddMassTransit(cfg =>
                     {
+                        cfg.UsingInMemory((context, cfg) =>
+                        {
+                            cfg.ConfigureEndpoints(context);
+                            cfg.UsePublishFilter<TenantMessageFilter>(context);
+                            cfg.UseSendFilter<TenantMessageFilter>(context);
+                        });
                         cfg.AddConsumer<TimeConsumer>();
-                        cfg.AddBus(ConfigureBus);
                         cfg.AddRequestClient<IsItTime>();
                     });
 
@@ -62,59 +68,6 @@ namespace SampleService
             {
                 await builder.RunConsoleAsync();
             }
-        }
-
-        static IBusControl ConfigureBus(IServiceProvider provider)
-        {
-            AppConfig = provider.GetRequiredService<IOptions<AppConfig>>().Value;
-
-            X509Certificate2 x509Certificate2 = null;
-
-            X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-            store.Open(OpenFlags.ReadOnly);
-
-            try
-            {
-                X509Certificate2Collection certificatesInStore = store.Certificates;
-
-                x509Certificate2 = certificatesInStore.OfType<X509Certificate2>()
-                    .FirstOrDefault(cert => cert.Thumbprint?.ToLower() == AppConfig.SSLThumbprint?.ToLower());
-            }
-            finally
-            {
-                store.Close();
-            }
-
-            return Bus.Factory.CreateUsingRabbitMq(cfg =>
-            {
-                var host = cfg.Host(AppConfig.Host, AppConfig.VirtualHost, h =>
-                {
-                    h.Username(AppConfig.Username);
-                    h.Password(AppConfig.Password);
-
-                    if (AppConfig.SSLActive)
-                    {
-                        h.UseSsl(ssl =>
-                        {
-                            ssl.ServerName = Dns.GetHostName();
-                            ssl.AllowPolicyErrors(SslPolicyErrors.RemoteCertificateNameMismatch);
-                            ssl.Certificate = x509Certificate2;
-                            ssl.Protocol = SslProtocols.Tls12;
-                            ssl.CertificateSelectionCallback = CertificateSelectionCallback;
-                        });
-                    }
-                });
-
-                cfg.ConfigureEndpoints(provider);
-            });
-        }
-
-        private static X509Certificate CertificateSelectionCallback(object sender, string targethost, X509CertificateCollection localcertificates, X509Certificate remotecertificate, string[] acceptableissuers)
-        {
-            var serverCertificate = localcertificates.OfType<X509Certificate2>()
-                                    .FirstOrDefault(cert => cert.Thumbprint.ToLower() == AppConfig.SSLThumbprint.ToLower());
-
-            return serverCertificate ?? throw new Exception("Wrong certificate");
         }
     }
 }

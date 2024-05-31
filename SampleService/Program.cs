@@ -45,6 +45,7 @@ namespace SampleService
                             cfg.ConfigureEndpoints(context);
                             cfg.UsePublishFilter<TenantMessageFilter>(context);
                             cfg.UseSendFilter<TenantMessageFilter>(context);
+                            cfg.UseConsumeFilter<TenantMessageFilter>(context);
                         });
                         cfg.AddConsumer<TimeConsumer>();
                         cfg.AddRequestClient<IsItTime>();

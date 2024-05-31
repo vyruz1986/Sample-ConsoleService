@@ -20,19 +20,21 @@ public class TenantMessageFilter : IFilter<PublishContext<ITenantMessage>>, IFil
     {
         context.Message.TenantId = Random.Shared.Next();
 
+        _logger.LogInformation("PUBLISH-FILTER: Set tenant id to {tenantId}", context.Message.TenantId);
+
         return next.Send(context);
     }
 
     public Task Send(ConsumeContext<ITenantMessage> context, IPipe<ConsumeContext<ITenantMessage>> next)
     {
-        _logger.LogInformation("Received ITenantMessage with tenant id {tenantId}", context.Message.TenantId);
+        _logger.LogInformation("CONSUME-FILTER: ITenantMessage with tenant id {tenantId}", context.Message.TenantId);
 
         return next.Send(context);
     }
 
     public Task Send(ConsumeContext<IsItTime> context, IPipe<ConsumeContext<IsItTime>> next)
     {
-        _logger.LogInformation("Received IsItTime with tenant id {tenantId}", context.Message.TenantId);
+        _logger.LogInformation("CONSUME-FILTER: IsItTime with tenant id {tenantId}", context.Message.TenantId);
 
         return next.Send(context);
     }

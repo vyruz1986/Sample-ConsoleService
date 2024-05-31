@@ -34,7 +34,7 @@ public class TenantMessageFilter : IFilter<PublishContext<ITenantMessage>>, IFil
 
     public Task Send(ConsumeContext<IsItTime> context, IPipe<ConsumeContext<IsItTime>> next)
     {
-        _logger.LogInformation("CONSUME-FILTER: Processing {messageType}, has tenant id {tenantId}", context.Message.GetType().Name, context.Message.TenantId);
+        _logger.LogInformation("CONSUME-FILTER: Specific IsItTime filter, has tenant id {tenantId}", context.Message.TenantId);
 
         return next.Send(context);
     }
